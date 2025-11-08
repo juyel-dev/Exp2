@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphzLive - Learn Visually</title>
+    
+    <!-- PWA -->
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <style>
+        /* === CSS Reset & Variables === */
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --border: #e2e8f0;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: #ffffff;
+            color: var(--dark);
+            overflow-x: hidden;
+            padding-bottom: 80px; /* Space for bottom nav */
+        }
+
+        /* === Loading Screen === */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 9999;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* === Main App Container === */
+        #app {
+            max-width: 500px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #ffffff;
+            position: relative;
+        }
+
+        /* === Tab Sections === */
+        .tab-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === Bottom Navigation === */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 1000;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--gray);
+            transition: all 0.3s;
+            position: relative;
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        /* === Home Tab - Discovery Feed === */
+        .discovery-feed {
+            padding: 0;
+        }
+
+        .graph-card {
+            background: white;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .graph-image {
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .graph-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .graph-actions {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .action-btn {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+            background: rgba(0,0,0,0.9);
+        }
+
+        .graph-info {
+            padding: 12px 16px;
+        }
+
+        .graph-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 1.1rem;
+        }
+
+        .graph-description {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .graph-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .tag {
+            background: var(--light);
+            color: var(--dark);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .graph-stats {
+            display: flex;
+            gap: 15px;
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        /* === Upload Tab === */
+        .upload-section {
+            padding: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .upload-area.active {
+            border-color: var(--primary);
+            background: #f0f4ff;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        /* === Profile Tab === */
+        .profile-section {
+            padding: 20px;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            border: 4px solid white;
+            box-shadow: var(--card-shadow);
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 4px;
+        }
+
+        /* === Settings Tab === */
+        .settings-section {
+            padding: 20px;
+        }
+
+        .settings-list {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        .setting-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        /* === Responsive Design === */
+        @media (max-width: 768px) {
+            #app {
+                border: none;
+                box-shadow: none;
+            }
+        }
+
+        /* === Dark Mode Support === */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #0f172a;
+                color: #f1f5f9;
+            }
+            
+            #app {
+                background: #0f172a;
+            }
+            
+            .graph-card, .settings-list {
+                background: #1e293b;
+            }
+            
+            .bottom-nav {
+                background: rgba(30, 41, 59, 0.95);
+                border-top-color: #334155;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loader"></div>
+        <h2>GraphzLive</h2>
+        <p>Loading your visual learning space...</p>
+    </div>
+
+    <!-- Main App -->
+    <div id="app">
+        <!-- Home Tab - Discovery Feed -->
+        <section id="homeSection" class="tab-section active">
+            <div class="discovery-feed" id="discoveryFeed">
+                <!-- Graphs will be loaded here dynamically -->
+                <div class="loading-graphs">
+                    <div class="graph-card">
+                        <div class="graph-image">
+                            <i class="fas fa-chart-bar" style="font-size: 3rem; color: #ccc;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Upload Tab -->
+        <section id="uploadSection" class="tab-section">
+            <div class="upload-section">
+                <h2 style="text-align: center; margin-bottom: 20px;">Share Your Graph</h2>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h3>Upload Image</h3>
+                    <p>Drag & drop or click to browse</p>
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                    <button class="btn" onclick="document.getElementById('imageInput').click()">
+                        <i class="fas fa-folder-open"></i> Choose Files
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" class="form-input" id="graphTitle" placeholder="Graph Title">
+                </div>
+
+                <div class="form-group">
+                    <select class="form-input" id="graphSubject">
+                        <option value="">Select Subject</option>
+                        <option value="physics">Physics</option>
+                        <option value="chemistry">Chemistry</option>
+                        <option value="biology">Biology</option>
+                        <option value="mathematics">Mathematics</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" class="form-input" id="graphTags" placeholder="Tags (comma separated)">
+                </div>
+
+                <div class="form-group">
+                    <textarea class="form-textarea" id="graphDescription" placeholder="Description (optional)"></textarea>
+                </div>
+
+                <button class="btn btn-secondary" id="uploadBtn">
+                    <i class="fas fa-upload"></i> Upload Graph
+                </button>
+            </div>
+        </section>
+
+        <!-- Profile Tab -->
+        <section id="profileSection" class="tab-section">
+            <div class="profile-section">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h2 id="userName">Guest User</h2>
+                    <p id="userBio">Join to share your graphs</p>
+                    <button class="btn" id="loginBtn" style="margin-top: 15px;">
+                        <i class="fab fa-google"></i> Login with Google
+                    </button>
+                </div>
+
+                <div class="profile-stats" id="profileStats" style="display: none;">
+                    <div class="stat-card">
+                        <div class="stat-number" id="uploadsCount">0</div>
+                        <div class="stat-label">Uploads</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="likesCount">0</div>
+                        <div class="stat-label">Likes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="viewsCount">0</div>
+                        <div class="stat-label">Views</div>
+                    </div>
+                </div>
+
+                <div id="userGraphs" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">My Graphs</h3>
+                    <div id="myGraphsList">
+                        <!-- User's graphs will appear here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Tab -->
+        <section id="settingsSection" class="tab-section">
+            <div class="settings-section">
+                <h2 style="margin-bottom: 20px;">Settings</h2>
+                
+                <div class="settings-list">
+                    <div class="setting-item">
+                        <span>Theme</span>
+                        <select id="themeSelect">
+                            <option value="auto">Auto</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <span>Notifications</span>
+                        <input type="checkbox" id="notificationsToggle" checked>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <span>Language</span>
+                        <select id="languageSelect">
+                            <option value="en">English</option>
+                            <option value="bn">Bengali</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-item" id="logoutItem" style="display: none;">
+                        <span>Logout</span>
+                        <button class="btn" id="logoutBtn" style="width: auto; padding: 8px 16px;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-target="homeSection">
+            <i class="fas fa-home"></i>
+        </button>
+        <button class="nav-btn" data-target="uploadSection">
+            <i class="fas fa-plus-square"></i>
+        </button>
+        <button class="nav-btn" data-target="profileSection">
+            <i class="fas fa-user"></i>
+        </button>
+        <button class="nav-btn" data-target="settingsSection">
+            <i class="fas fa-cog"></i>
+        </button>
+    </nav>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA84Ty4SNDuLMKzeHX1pJMUgjoFZ89nbRE",
+            authDomain: "graphzlive.firebaseapp.com",
+            projectId: "graphzlive",
+            storageBucket: "graphzlive.firebasestorage.app",
+            messagingSenderId: "521947472086",
+            appId: "1:521947472086:web:b7795552c40bb58b0b2977"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // App State
+        let currentUser = null;
+        let graphs = [];
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        async function initializeApp() {
+            // Setup navigation
+            setupNavigation();
+            
+            // Check authentication state
+            setupAuth();
+            
+            // Load initial data
+            await loadGraphs();
+            
+            // Setup upload functionality
+            setupUpload();
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.display = 'none';
+            }, 1000);
+        }
+
+        function setupNavigation() {
+            const navButtons = document.querySelectorAll('.nav-btn');
+            
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from all buttons
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    
+                    // Hide all sections
+                    document.querySelectorAll('.tab-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // Show target section
+                    const targetId = button.getAttribute('data-target');
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+        }
+
+        function setupAuth() {
+            auth.onAuthStateChanged((user) => {
+                currentUser = user;
+                updateUIForAuth(user);
+            });
+            
+            // Login button
+            document.getElementById('loginBtn').addEventListener('click', handleGoogleLogin);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        }
+
+        async function handleGoogleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                await auth.signInWithPopup(provider);
+            } catch (error) {
+                console.error('Login failed:', error);
+                alert('Login failed. Please try again.');
+            }
+        }
+
+        function handleLogout() {
+            auth.signOut();
+        }
+
+        function updateUIForAuth(user) {
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutItem = document.getElementById('logoutItem');
+            const profileStats = document.getElementById('profileStats');
+            const userGraphs = document.getElementById('userGraphs');
+            const userName = document.getElementById('userName');
+            const userBio = document.getElementById('userBio');
+            const profileAvatar = document.querySelector('.profile-avatar');
+
+            if (user) {
+                // User is logged in
+                loginBtn.style.display = 'none';
+                logoutItem.style.display = 'flex';
+                profileStats.style.display = 'grid';
+                userGraphs.style.display = 'block';
+                
+                // Update user info
+                userName.textContent = user.displayName || 'User';
+                userBio.textContent = user.email;
+                
+                // Update avatar
+                if (user.photoURL) {
+                    profileAvatar.innerHTML = `<img src="${user.photoURL}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%;">`;
+                } else {
+                    profileAvatar.innerHTML = user.displayName ? 
+                        user.displayName.charAt(0).toUpperCase() : 
+                        user.email.charAt(0).toUpperCase();
+                }
+                
+                // Load user-specific data
+                loadUserGraphs(user.uid);
+                updateUserStats(user.uid);
+            } else {
+                // User is logged out
+                loginBtn.style.display = 'block';
+                logoutItem.style.display = 'none';
+                profileStats.style.display = 'none';
+                userGraphs.style.display = 'none';
+                
+                // Reset user info
+                userName.textContent = 'Guest User';
+                userBio.textContent = 'Join to share your graphs';
+                profileAvatar.innerHTML = '<i class="fas fa-user"></i>';
+            }
+        }
+
+        async function loadGraphs() {
+            try {
+                const snapshot = await db.collection('graphs')
+                    .orderBy('createdAt', 'desc')
+                    .limit(20)
+                    .get();
+                
+                graphs = [];
+                snapshot.forEach(doc => {
+                    graphs.push({ id: doc.id, ...doc.data() });
+                });
+                
+                renderGraphs();
+            } catch (error) {
+                console.error('Error loading graphs:', error);
+                // Load sample data for demo
+                loadSampleGraphs();
+            }
+        }
+
+        function loadSampleGraphs() {
+            graphs = [
+                {
+                    id: '1',
+                    title: 'Wave Interference Patterns',
+                    description: 'Visual representation of wave interference in physics',
+                    subject: 'physics',
+                    tags: ['waves', 'interference', 'physics'],
+                    imageUrl: '',
+                    likes: 42,
+                    views: 1247,
+                    createdAt: new Date()
+                },
+                {
+                    id: '2',
+                    title: 'Chemical Bonding Types',
+                    description: 'Different types of chemical bonds and their properties',
+                    subject: 'chemistry',
+                    tags: ['chemistry', 'bonding', 'molecules'],
+                    imageUrl: '',
+                    likes: 28,
+                    views: 856,
+                    createdAt: new Date()
+                },
+                {
+                    id: '3',
+                    title: 'Human Circulatory System',
+                    description: 'Detailed diagram of blood flow through the heart',
+                    subject: 'biology',
+                    tags: ['biology', 'anatomy', 'circulation'],
+                    imageUrl: '',
+                    likes: 65,
+                    views: 2103,
+                    createdAt: new Date()
+                }
+            ];
+            
+            renderGraphs();
+        }
+
+        function renderGraphs() {
+            const feed = document.getElementById('discoveryFeed');
+            
+            if (graphs.length === 0) {
+                feed.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--gray);">
+                        <i class="fas fa-chart-bar" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+                        <h3>No graphs yet</h3>
+                        <p>Be the first to upload a graph!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            feed.innerHTML = graphs.map(graph => `
+                <div class="graph-card" data-id="${graph.id}">
+                    <div class="graph-image">
+                        ${graph.imageUrl ? 
+                            `<img src="${graph.imageUrl}" alt="${graph.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+                            ''
+                        }
+                        <div style="${graph.imageUrl ? 'display: none;' : ''} 
+                            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
+                            background: linear-gradient(45deg, #8b5cf6, #3b82f6); color: white; font-size: 3rem;">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        
+                        <div class="graph-actions">
+                            <button class="action-btn like-btn" data-id="${graph.id}">
+                                <i class="far fa-heart"></i>
+                            </button>
+                            <button class="action-btn comment-btn" data-id="${graph.id}">
+                                <i class="far fa-comment"></i>
+                            </button>
+                            <button class="action-btn share-btn" data-id="${graph.id}">
+                                <i class="far fa-share-square"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="graph-info">
+                        <h3 class="graph-title">${graph.title}</h3>
+                        <p class="graph-description">${graph.description}</p>
+                        
+                        <div class="graph-tags">
+                            ${graph.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                        
+                        <div class="graph-stats">
+                            <span><i class="fas fa-heart"></i> ${graph.likes || 0}</span>
+                            <span><i class="fas fa-eye"></i> ${graph.views || 0}</span>
+                            <span><i class="fas fa-clock"></i> ${timeAgo(graph.createdAt)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add event listeners for action buttons
+            setupGraphInteractions();
+        }
+
+        function setupGraphInteractions() {
+            // Like functionality
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const graphId = this.getAttribute('data-id');
+                    handleLike(graphId, this);
+                });
+            });
+            
+            // Comment functionality
+            document.querySelectorAll('.comment-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const graphId = this.getAttribute('data-id');
+                    showComments(graphId);
+                });
+            });
+        }
+
+        function handleLike(graphId, button) {
+            if (!currentUser) {
+                alert('Please login to like graphs');
+                return;
+            }
+            
+            const icon = button.querySelector('i');
+            if (icon.classList.contains('far')) {
+                icon.classList.replace('far', 'fas');
+                icon.style.color = '#ef4444';
+            } else {
+                icon.classList.replace('fas', 'far');
+                icon.style.color = '';
+            }
+            
+            // In a real app, you would update Firebase here
+        }
+
+        function showComments(graphId) {
+            const graph = graphs.find(g => g.id === graphId);
+            alert(`Comments for: ${graph.title}\n\nComment feature coming soon!`);
+        }
+
+        function setupUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const imageInput = document.getElementById('imageInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('active');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('active');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('active');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleImageSelect(files[0]);
+                }
+            });
+            
+            // File input change
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleImageSelect(e.target.files[0]);
+                }
+            });
+            
+            // Upload button
+            uploadBtn.addEventListener('click', handleUpload);
+        }
+
+        function handleImageSelect(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('uploadArea').innerHTML = `
+                    <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                    <p style="margin-top: 10px;">Image selected: ${file.name}</p>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function handleUpload() {
+            if (!currentUser) {
+                alert('Please login to upload graphs');
+                return;
+            }
+            
+            const title = document.getElementById('graphTitle').value;
+            const subject = document.getElementById('graphSubject').value;
+            const tags = document.getElementById('graphTags').value.split(',').map(tag => tag.trim());
+            const description = document.getElementById('graphDescription').value;
+            
+            if (!title || !subject) {
+                alert('Please fill in title and subject');
+                return;
+            }
+            
+            try {
+                // In a real app, you would upload to Imgur here
+                // const imageUrl = await uploadToImgur(imageFile);
+                
+                const graphData = {
+                    title,
+                    subject,
+                    tags: tags.filter(tag => tag),
+                    description,
+                    imageUrl: '', // Would be the Imgur URL
+                    uploader: currentUser.uid,
+                    uploaderName: currentUser.displayName,
+                    likes: 0,
+                    views: 0,
+                    createdAt: new Date()
+                };
+                
+                await db.collection('graphs').add(graphData);
+                
+                alert('Graph uploaded successfully!');
+                resetUploadForm();
+                
+                // Reload graphs
+                await loadGraphs();
+                
+                // Switch to home tab
+                document.querySelector('[data-target="homeSection"]').click();
+                
+            } catch (error) {
+                console.error('Upload failed:', error);
+                alert('Upload failed. Please try again.');
+            }
+        }
+
+        function resetUploadForm() {
+            document.getElementById('graphTitle').value = '';
+            document.getElementById('graphSubject').value = '';
+            document.getElementById('graphTags').value = '';
+            document.getElementById('graphDescription').value = '';
+            document.getElementById('uploadArea').innerHTML = `
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3>Upload Image</h3>
+                <p>Drag & drop or click to browse</p>
+                <button class="btn" onclick="document.getElementById('imageInput').click()">
+                    <i class="fas fa-folder-open"></i> Choose Files
+                </button>
+            `;
+        }
+
+        async function loadUserGraphs(userId) {
+            try {
+                const snapshot = await db.collection('graphs')
+                    .where('uploader', '==', userId)
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                const userGraphs = [];
+                snapshot.forEach(doc => {
+                    userGraphs.push({ id: doc.id, ...doc.data() });
+                });
+                
+                renderUserGraphs(userGraphs);
+            } catch (error) {
+                console.error('Error loading user graphs:', error);
+            }
+        }
+
+        function renderUserGraphs(userGraphs) {
+            const container = document.getElementById('myGraphsList');
+            
+            if (userGraphs.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: var(--gray);">
+                        <p>You haven't uploaded any graphs yet.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = userGraphs.map(graph => `
+                <div class="graph-card" style="margin-bottom: 15px;">
+                    <div class="graph-image" style="height: 120px;">
+                        ${graph.imageUrl ? 
+                            `<img src="${graph.imageUrl}" alt="${graph.title}" style="object-fit: cover; height: 100%;">` : 
+                            `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
+                              background: linear-gradient(45deg, #8b5cf6, #3b82f6); color: white;">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>`
+                        }
+                    </div>
+                    <div class="graph-info">
+                        <h4 class="graph-title">${graph.title}</h4>
+                        <div class="graph-stats">
+                            <span><i class="fas fa-heart"></i> ${graph.likes || 0}</span>
+                            <span><i class="fas fa-eye"></i> ${graph.views || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateUserStats(userId) {
+            // In a real app, you would calculate these from Firestore
+            document.getElementById('uploadsCount').textContent = '3';
+            document.getElementById('likesCount').textContent = '42';
+            document.getElementById('viewsCount').textContent = '1.2K';
+        }
+
+        function timeAgo(date) {
+            const now = new Date();
+            const diff = now - new Date(date);
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            return new Date(date).toLocaleDateString();
+        }
+
+        // Imgur Upload Function (for future use)
+        async function uploadToImgur(imageFile) {
+            const formData = new FormData();
+            formData.append('image', imageFile);
+            
+            const response = await fetch('https://api.imgur.com/3/image', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Client-ID YOUR_IMGUR_CLIENT_ID'
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            return data.data.link;
+        }
+    </script>
+</body>
+</html>
