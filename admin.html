@@ -1,118 +1,58 @@
-<!-- index.html -->
+<!-- admin.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binaural Beats Pro</title>
-    <meta name="description" content="Free Binaural Beats Generator for Focus, Sleep, Meditation. Install as PWA!">
-    <link rel="manifest" href="manifest.json">
+    <title>Admin Panel - God Mode</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-    <!-- Add your Firebase config in script.js -->
 </head>
 <body>
     <header>
-        <div class="header-text">Binaural Beats Pro - Relax Your Mind</div>
-        <div class="hamburger" onclick="toggleMenu()">☰</div>
-        <nav id="menu">
-            <a href="index.html">Home</a>
-            <a href="docs.html">Learn & Docs</a>
-            <a href="admin.html">Admin (Login Required)</a>
-        </nav>
+        <div class="header-text">Admin God Panel</div>
     </header>
 
     <div class="container">
-        <h1>Binaural Beats Pro</h1>
-        <p>Put on headphones. Calm your mind. Boost focus.</p>
-
-        <!-- Presets Section -->
-        <div class="card">
-            <h2>Select Preset</h2>
-            <div class="presets" id="presets"></div>
+        <div id="login-form">
+            <h2>Login</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Login</button>
         </div>
 
-        <!-- Controls -->
-        <div class="card">
-            <div class="controls">
-                <div>
-                    <div class="slider">
-                        <label>Left Ear <span class="value" id="leftVal">432</span> Hz</label>
-                        <input type="range" id="leftFreq" min="100" max="800" value="432">
-                    </div>
-                    <div class="slider">
-                        <label>Right Ear <span class="value" id="rightVal">438</span> Hz</label>
-                        <input type="range" id="rightFreq" min="100" max="800" value="438">
-                    </div>
-                    <div class="slider">
-                        <label>Beat: <span id="beatVal">6</span> Hz</label>
-                    </div>
-                </div>
-                <div>
-                    <div class="slider">
-                        <label>Master Volume <span class="value" id="volVal">70</span>%</label>
-                        <input type="range" id="masterVol" min="0" max="100" value="70">
-                    </div>
-                    <div class="slider">
-                        <label>Background Sound</label>
-                        <select id="bgSound">
-                            <option value="">None</option>
-                            <option value="rain">Rain</option>
-                            <option value="ocean">Ocean Waves</option>
-                            <option value="forest">Forest</option>
-                            <option value="whitenoise">White Noise</option>
-                        </select>
-                    </div>
-                </div>
+        <div id="admin-controls" style="display:none;">
+            <h2>God Controls</h2>
+            <!-- Announcements -->
+            <div class="card">
+                <h3>Add Announcement</h3>
+                <textarea id="announce-text" placeholder="Announcement text"></textarea>
+                <button onclick="addAnnouncement()">Add</button>
             </div>
-        </div>
-
-        <!-- Visualizer & Buttons -->
-        <div class="card">
-            <canvas id="visualizer"></canvas>
-            <div class="timer" id="timer">15:00</div>
-            <button class="big-btn" id="playBtn">Play</button>
-            <button class="big-btn" id="stopBtn" disabled>Stop</button>
-            <button class="big-btn" onclick="savePreset()">Save Preset</button>
-        </div>
-
-        <!-- Timer Slider -->
-        <div class="card">
-            <h3>Set Timer</h3>
-            <input type="range" id="timerSlider" min="1" max="480" value="15">
-            <p><span id="timerMin">15</span> minutes</p>
-        </div>
-
-        <!-- Announcements from Firebase -->
-        <div class="card" id="announcements">
-            <h3>Announcements</h3>
-            <div id="announce-content"></div>
-        </div>
-
-        <!-- Ads from Firebase -->
-        <div class="card" id="ads">
-            <h3>Sponsored</h3>
-            <div id="ad-content"></div>
-        </div>
-
-        <!-- Feedback Form -->
-        <div class="card">
-            <h3>Feedback</h3>
-            <textarea id="feedback" placeholder="Your thoughts..."></textarea>
-            <button onclick="submitFeedback()">Submit</button>
+            <!-- Ads -->
+            <div class="card">
+                <h3>Add Manual Ad</h3>
+                <input type="text" id="ad-text" placeholder="Ad text or HTML">
+                <button onclick="addAd()">Add</button>
+            </div>
+            <!-- Pinned Text -->
+            <div class="card">
+                <h3>Pin Text</h3>
+                <textarea id="pin-text" placeholder="Pinned message"></textarea>
+                <button onclick="pinText()">Pin</button>
+            </div>
+            <!-- New Features -->
+            <div class="card">
+                <h3>New Feature Announcement</h3>
+                <textarea id="feature-text" placeholder="New feature details"></textarea>
+                <button onclick="addFeature()">Add</button>
+            </div>
+            <button onclick="logout()">Logout</button>
         </div>
     </div>
 
-    <footer>
-        <p>Powered by Mythralux | <a href="https://amazon.com?aff=yourid" target="_blank">Buy Headphones (Affiliate)</a></p>
-    </footer>
-
-    <script src="script.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').then(() => console.log('SW registered'));
-        }
-    </script>
+    <script src="admin-script.js"></script>
 </body>
 </html>
