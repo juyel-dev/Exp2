@@ -1,47 +1,118 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Binaural Beats Pro</title>
+    <title>Binaural Beats Pro</title>
+    <meta name="description" content="Free Binaural Beats Generator for Focus, Sleep, Meditation. Install as PWA!">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <!-- Add your Firebase config in script.js -->
 </head>
 <body>
     <header>
-        <div class="header-text">Admin Panel - God Mode</div>
+        <div class="header-text">Binaural Beats Pro - Relax Your Mind</div>
+        <div class="hamburger" onclick="toggleMenu()">☰</div>
+        <nav id="menu">
+            <a href="index.html">Home</a>
+            <a href="docs.html">Learn & Docs</a>
+            <a href="admin.html">Admin (Login Required)</a>
+        </nav>
     </header>
 
     <div class="container">
-        <div id="authForm" class="card">
-            <h2>Admin Login</h2>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <button onclick="signIn()">Login</button>
-            <button onclick="signUp()">Sign Up (First Time)</button>
-            <button onclick="signOut()">Logout</button>
+        <h1>Binaural Beats Pro</h1>
+        <p>Put on headphones. Calm your mind. Boost focus.</p>
+
+        <!-- Presets Section -->
+        <div class="card">
+            <h2>Select Preset</h2>
+            <div class="presets" id="presets"></div>
         </div>
 
-        <div id="adminControls" class="card" style="display:none;">
-            <h2>Manage Announcements, Ads, Pins</h2>
-            <input type="text" id="announceText" placeholder="Text">
-            <select id="announceType">
-                <option value="ad">Manual Ad</option>
-                <option value="announcement">Announcement</option>
-                <option value="pin">Text Pin</option>
-                <option value="feature">New Feature</option>
-            </select>
-            <button onclick="addAnnouncement()">Add</button>
-            <div id="currentAnnounce"></div>
+        <!-- Controls -->
+        <div class="card">
+            <div class="controls">
+                <div>
+                    <div class="slider">
+                        <label>Left Ear <span class="value" id="leftVal">432</span> Hz</label>
+                        <input type="range" id="leftFreq" min="100" max="800" value="432">
+                    </div>
+                    <div class="slider">
+                        <label>Right Ear <span class="value" id="rightVal">438</span> Hz</label>
+                        <input type="range" id="rightFreq" min="100" max="800" value="438">
+                    </div>
+                    <div class="slider">
+                        <label>Beat: <span id="beatVal">6</span> Hz</label>
+                    </div>
+                </div>
+                <div>
+                    <div class="slider">
+                        <label>Master Volume <span class="value" id="volVal">70</span>%</label>
+                        <input type="range" id="masterVol" min="0" max="100" value="70">
+                    </div>
+                    <div class="slider">
+                        <label>Background Sound</label>
+                        <select id="bgSound">
+                            <option value="">None</option>
+                            <option value="rain">Rain</option>
+                            <option value="ocean">Ocean Waves</option>
+                            <option value="forest">Forest</option>
+                            <option value="whitenoise">White Noise</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualizer & Buttons -->
+        <div class="card">
+            <canvas id="visualizer"></canvas>
+            <div class="timer" id="timer">15:00</div>
+            <button class="big-btn" id="playBtn">Play</button>
+            <button class="big-btn" id="stopBtn" disabled>Stop</button>
+            <button class="big-btn" onclick="savePreset()">Save Preset</button>
+        </div>
+
+        <!-- Timer Slider -->
+        <div class="card">
+            <h3>Set Timer</h3>
+            <input type="range" id="timerSlider" min="1" max="480" value="15">
+            <p><span id="timerMin">15</span> minutes</p>
+        </div>
+
+        <!-- Announcements from Firebase -->
+        <div class="card" id="announcements">
+            <h3>Announcements</h3>
+            <div id="announce-content"></div>
+        </div>
+
+        <!-- Ads from Firebase -->
+        <div class="card" id="ads">
+            <h3>Sponsored</h3>
+            <div id="ad-content"></div>
+        </div>
+
+        <!-- Feedback Form -->
+        <div class="card">
+            <h3>Feedback</h3>
+            <textarea id="feedback" placeholder="Your thoughts..."></textarea>
+            <button onclick="submitFeedback()">Submit</button>
         </div>
     </div>
 
     <footer>
-        <p>Powered by Mythralux</p>
+        <p>Powered by Mythralux | <a href="https://amazon.com?aff=yourid" target="_blank">Buy Headphones (Affiliate)</a></p>
     </footer>
 
-    <script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore-compat.js"></script>
-    <script src="admin.js"></script>
+    <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(() => console.log('SW registered'));
+        }
+    </script>
 </body>
 </html>
