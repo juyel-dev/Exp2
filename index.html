@@ -1,195 +1,47 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binaural Beats Generator</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom, #1e3c72, #2a5298);
-            color: white;
-            text-align: center;
-            padding: 20px;
-            margin: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-        h1 {
-            margin-bottom: 20px;
-        }
-        .slider-container {
-            margin: 20px 0;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 18px;
-        }
-        input[type="range"] {
-            width: 100%;
-            height: 8px;
-            border-radius: 5px;
-            background: #ddd;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #4CAF50;
-            cursor: pointer;
-        }
-        .freq-display {
-            font-size: 24px;
-            margin: 10px 0;
-            color: #FFD700;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 10px;
-            cursor: pointer;
-            margin: 10px;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #45a049;
-        }
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-        .warning {
-            background: #ff9800;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-    </style>
+    <title>Binaural Beats Pro</title>
+    <meta name="description" content="Free binaural beats generator for focus, sleep, meditation. Headphones required!">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#0f172a">
 </head>
 <body>
+    <header>
+        <div class="header-text">Binaural Beats Pro - Relax Your Mind</div>
+        <nav class="navbar">
+            <div class="hamburger" id="hamburger">&#9776;</div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="docs.html">Learn & Docs</a></li>
+                <li><a href="admin.html">Admin (Login Required)</a></li>
+            </ul>
+        </nav>
+    </header>
+
     <div class="container">
-        <h1>🧠 Binaural Beats Generator</h1>
-        <div class="warning">
-            ⚠️ <strong>হেডফোন লাগান!</strong> এটা স্টিরিও অডিও—লেফট/রাইট আলাদা হলে বিট তৈরি হবে। ফ্রিকোয়েন্সি চেঞ্জ করুন এবং প্লে করুন।
+        <!-- Announcements from Firestore -->
+        <div id="announcements" class="card"></div>
+
+        <!-- Existing controls, sliders, presets, etc. from previous code -->
+        <div class="card">
+            <h2>Select Preset</h2>
+            <div class="presets" id="presets"></div>
         </div>
-        
-        <div class="slider-container">
-            <label for="leftFreq">Left Ear Frequency (Hz): <span id="leftDisplay">200</span></label>
-            <input type="range" id="leftFreq" min="100" max="500" value="200">
-        </div>
-        
-        <div class="slider-container">
-            <label for="rightFreq">Right Ear Frequency (Hz): <span id="rightDisplay">210</span></label>
-            <input type="range" id="rightFreq" min="100" max="500" value="210">
-        </div>
-        
-        <div class="freq-display">
-            Beat Frequency: <span id="beatFreq">10</span> Hz (রিল্যাক্সেশনের জন্য 4-8 Hz ভালো)
-        </div>
-        
-        <button id="playBtn">▶️ Play</button>
-        <button id="stopBtn" disabled>⏹️ Stop</button>
+        <!-- ... (Add the rest of the controls, visualizer, timer from previous HTML) ... -->
     </div>
 
-    <script>
-        let audioContext;
-        let leftOscillator, rightOscillator;
-        let isPlaying = false;
+    <footer>
+        <p>Powered by Mythralux</p>
+        <p>Affiliate: <a href="https://amzn.to/affiliate-headphones" target="_blank" rel="nofollow">Buy Headphones on Amazon</a></p>
+    </footer>
 
-        const leftSlider = document.getElementById('leftFreq');
-        const rightSlider = document.getElementById('rightFreq');
-        const leftDisplay = document.getElementById('leftDisplay');
-        const rightDisplay = document.getElementById('rightDisplay');
-        const beatDisplay = document.getElementById('beatFreq');
-        const playBtn = document.getElementById('playBtn');
-        const stopBtn = document.getElementById('stopBtn');
-
-        // স্লাইডার আপডেট
-        leftSlider.addEventListener('input', updateDisplays);
-        rightSlider.addEventListener('input', updateDisplays);
-
-        function updateDisplays() {
-            const left = parseInt(leftSlider.value);
-            const right = parseInt(rightSlider.value);
-            leftDisplay.textContent = left;
-            rightDisplay.textContent = right;
-            beatDisplay.textContent = Math.abs(left - right);
-        }
-
-        // প্লে বাটন
-        playBtn.addEventListener('click', playBinaural);
-        stopBtn.addEventListener('click', stopBinaural);
-
-        function playBinaural() {
-            if (isPlaying) return;
-
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const leftFreq = parseFloat(leftSlider.value);
-            const rightFreq = parseFloat(rightSlider.value);
-
-            // লেফট অসিলেটর
-            leftOscillator = audioContext.createOscillator();
-            leftOscillator.type = 'sine';
-            leftOscillator.frequency.setValueAtTime(leftFreq, audioContext.currentTime);
-
-            const leftPanner = audioContext.createPanner();
-            leftPanner.panningModel = 'equalpower';
-            leftPanner.setPosition(-1, 0, 0); // লেফট সাইড
-
-            leftOscillator.connect(leftPanner);
-            leftPanner.connect(audioContext.destination);
-
-            // রাইট অসিলেটর
-            rightOscillator = audioContext.createOscillator();
-            rightOscillator.type = 'sine';
-            rightOscillator.frequency.setValueAtTime(rightFreq, audioContext.currentTime);
-
-            const rightPanner = audioContext.createPanner();
-            rightPanner.panningModel = 'equalpower';
-            rightPanner.setPosition(1, 0, 0); // রাইট সাইড
-
-            rightOscillator.connect(rightPanner);
-            rightPanner.connect(audioContext.destination);
-
-            // স্টার্ট
-            leftOscillator.start();
-            rightOscillator.start();
-
-            isPlaying = true;
-            playBtn.disabled = true;
-            stopBtn.disabled = false;
-            playBtn.textContent = '⏸️ Pause';
-        }
-
-        function stopBinaural() {
-            if (!isPlaying) return;
-
-            leftOscillator.stop();
-            rightOscillator.stop();
-            audioContext.close();
-
-            isPlaying = false;
-            playBtn.disabled = false;
-            stopBtn.disabled = true;
-            playBtn.textContent = '▶️ Play';
-        }
-
-        // পেজ লোড হলে ইনিশিয়াল ডিসপ্লে
-        updateDisplays();
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
