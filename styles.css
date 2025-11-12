@@ -1,0 +1,14 @@
+/* Existing styles from previous code, plus new */
+body { font-family: sans-serif; background: #0f172a; color: #fff; }
+.header-text { text-align: center; font-size: 2rem; }
+.navbar { display: flex; justify-content: space-between; align-items: center; }
+.hamburger { display: none; cursor: pointer; font-size: 2rem; }
+.nav-links { list-style: none; display: flex; gap: 20px; }
+@media (max-width: 768px) {
+    .hamburger { display: block; }
+    .nav-links { display: none; flex-direction: column; position: absolute; top: 60px; left: 0; width: 100%; background: #0f172a; }
+    .nav-links.active { display: flex; }
+}
+.card { background: rgba(255,255,255,0.1); padding: 20px; margin: 10px; border-radius: 10px; }
+footer { text-align: center; padding: 20px; }
+footer a { color: #8b5cf6; }
