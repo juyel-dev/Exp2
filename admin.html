@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Binaural Beats Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-text">Admin Panel - God Mode</div>
+    </header>
+
+    <div class="container">
+        <div id="authForm" class="card">
+            <h2>Admin Login</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="signIn()">Login</button>
+            <button onclick="signUp()">Sign Up (First Time)</button>
+            <button onclick="signOut()">Logout</button>
+        </div>
+
+        <div id="adminControls" class="card" style="display:none;">
+            <h2>Manage Announcements, Ads, Pins</h2>
+            <input type="text" id="announceText" placeholder="Text">
+            <select id="announceType">
+                <option value="ad">Manual Ad</option>
+                <option value="announcement">Announcement</option>
+                <option value="pin">Text Pin</option>
+                <option value="feature">New Feature</option>
+            </select>
+            <button onclick="addAnnouncement()">Add</button>
+            <div id="currentAnnounce"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Powered by Mythralux</p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore-compat.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
